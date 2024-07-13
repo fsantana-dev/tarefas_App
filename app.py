@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify, g, render_template, redirect, url_for
-import sqlite3
+import psycopg2
 import os
 
 app = Flask(__name__)
-DATABASE = 'tasks.db'
+DATABASE_URL = os.getenv('DATABASE_URL')  # Lê a URL do banco de dados a partir da variável de ambiente
 
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        db = g._database = psycopg2.connect(DATABASE_URL, sslmode='require')
     return db
 
 @app.teardown_appcontext
@@ -28,7 +28,7 @@ def register():
     password = data['password']
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO usuarios (email, senha) VALUES (?, ?)', (email, password))
+    cursor.execute('INSERT INTO usuarios (email, senha) VALUES (%s, %s)', (email, password))
     conn.commit()
     return redirect(url_for('index'))
 
@@ -39,7 +39,7 @@ def login():
     password = data['password']
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM usuarios WHERE email = ? AND senha = ?', (email, password))
+    cursor.execute('SELECT * FROM usuarios WHERE email = %s AND senha = %s', (email, password))
     user = cursor.fetchone()
     if user:
         return redirect(url_for('tasks', user_id=user[0]))
@@ -54,12 +54,12 @@ def tasks(user_id):
         due_date = data['due_date']
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO tarefas (userId, tarefa, dataVencimento, concluida) VALUES (?, ?, ?, ?)', (user_id, task, due_date, False))
+        cursor.execute('INSERT INTO tarefas (userId, tarefa, dataVencimento, concluida) VALUES (%s, %s, %s, %s)', (user_id, task, due_date, False))
         conn.commit()
         return redirect(url_for('tasks', user_id=user_id))
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM tarefas WHERE userId = ?', (user_id,))
+    cursor.execute('SELECT * FROM tarefas WHERE userId = %s', (user_id,))
     tasks = cursor.fetchall()
     return render_template('tasks.html', tasks=tasks, user_id=user_id)
 
@@ -67,7 +67,7 @@ def tasks(user_id):
 def update_task(task_id, user_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('UPDATE tarefas SET concluida = 1 WHERE id = ?', (task_id,))
+    cursor.execute('UPDATE tarefas SET concluida = 1 WHERE id = %s', (task_id,))
     conn.commit()
     return redirect(url_for('tasks', user_id=user_id))
 
@@ -75,7 +75,7 @@ def update_task(task_id, user_id):
 def delete_task(task_id, user_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM tarefas WHERE id = ?', (task_id,))
+    cursor.execute('DELETE FROM tarefas WHERE id = %s', (task_id,))
     conn.commit()
     return redirect(url_for('tasks', user_id=user_id))
 
