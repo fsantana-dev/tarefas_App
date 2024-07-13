@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks</title>
+</head>
+<body>
+    <h1>Tasks</h1>
+    <form action="/tasks/{{ user_id }}" method="post">
+        <input type="text" name="task" placeholder="New Task" required>
+        <input type="text" name="due_date" placeholder="Due Date" required>
+        <button type="submit">Add Task</button>
+    </form>
+    <ul>
+        {% for task in tasks %}
+        <li>
+            {{ task[2] }} - {{ task[3] }} - {% if task[4] %}Completed{% else %}Not Completed{% endif %}
+            <form action="/task/{{ task[0] }}/{{ user_id }}" method="post" style="display:inline;">
+                <button type="submit">Complete</button>
+            </form>
+            <form action="/task/delete/{{ task[0] }}/{{ user_id }}" method="post" style="display:inline;">
+                <button type="submit">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
